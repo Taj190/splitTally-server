@@ -28,3 +28,19 @@ export const DataValidation = ({ name, email, password }) => {
     errors: [],
   };
 };
+export const PasswordValidation = ({password})=>{
+  const errors  = []
+  if (!passwordRegex.test(password)) {
+    errors.push('Password must contain at least one uppercase letter, one lowercase letter, one special character, one number, and be at least 6 characters long.');
+  }  
+  if(errors.length > 0){
+    return {
+      valid:false,
+      errors
+    }
+  }
+  return {
+    valid: true,
+    errors: [],
+  };
+}

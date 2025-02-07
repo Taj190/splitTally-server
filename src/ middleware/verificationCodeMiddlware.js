@@ -1,3 +1,4 @@
+import User from "../schema/GooglesignUp.js";
 import VerificationCode from "../schema/verificationcode.js";
 
 export const VerifyCodeMiddleware = async (req, res, next) => {
@@ -10,11 +11,10 @@ export const VerifyCodeMiddleware = async (req, res, next) => {
 
   try {
      
-    
     const verificationEntry = await VerificationCode.findOne({ email, code });
 
     if (!verificationEntry) {
-      return res.status(404).json({ message: 'Invalid or expired code.' });
+      return res.status(404).json({ message: 'Invalid email/code or expired code.' });
     }
 
     // Check if the code has expired
@@ -30,4 +30,24 @@ export const VerifyCodeMiddleware = async (req, res, next) => {
     res.status(500).json({ message: 'An error occurred while verifying the code.' });
   }
 };
+
+export const E_Conf_Midd_ToResetPass = async (req, res, next)=>{
+  const {email}= req.body
+  try {
+    const UserEmailValid = await User.findOne({email});
+   
+    if(UserEmailValid.isGoogleSignUp){
+      return res.status(400).json({
+        success:false ,
+        message :"This email is already used for Google sign up"
+      })
+    }
+    next()
+  } catch (error) {
+    return res.status(500).json({
+      success:false ,
+      message :"An error ocuur while email confirmation"
+    })
+  }
+}
 

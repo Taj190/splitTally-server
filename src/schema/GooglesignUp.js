@@ -20,12 +20,13 @@ const userSchema = new mongoose.Schema({
   },
   googleId: {
     type: String,
-    required: false, // Google ID is optional, only required if the user logs in with Google
+    required: false, 
   },
   isGoogleSignUp: {
     type: Boolean,
     default: false,
   },
+  groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }] ,
   createdAt: {
     type: Date,
     default: Date.now,

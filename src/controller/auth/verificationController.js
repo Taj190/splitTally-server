@@ -1,15 +1,14 @@
-import ConnectDb from "../dbConfig/db.js";
-import VerificationCode from "../schema/verificationcode.js";
-import { GenerateCode } from "../utils/generateCode.js";
+import ConnectDb from "../../dbConfig/db.js";
+import VerificationCode from "../../schema/verificationcode.js";
+import { GenerateCode } from "../../utils/generateCode.js";
 
 
-import SendVerificationEmail from "../utils/sendEmail.js";
+import SendVerificationEmail from "../../utils/sendEmail.js";
 
 ConnectDb();
 
 export const VerificationCodeController = async (req, res) => {
     const { email } = req.body;
-
     try {
         // Generate a 6-digit verification code
         const code = GenerateCode();
@@ -29,8 +28,8 @@ export const VerificationCodeController = async (req, res) => {
             message: "Your code has been sent to your email. Please check it." });
     } catch (error) {
         // Send an error response back to the client
-        res.status(500).json({ 
+     
+};   res.status(500).json({ 
             success:false,
             message: "An error occurred while sending the verification code." });
     }
-};
