@@ -5,5 +5,7 @@ const groupSchema = new mongoose.Schema({
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
   });
   
+  groupSchema.index({ members: 1 });
+
   const Group = mongoose.model("Group", groupSchema);
   export default  Group;

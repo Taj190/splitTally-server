@@ -49,6 +49,7 @@ app.get('/auth/callback', async (req, res) => {
       res.status(500).send('Authentication failed.');
       
     }
+    
   });
 
 app.options('*', cors());
@@ -64,6 +65,8 @@ app.use('/auth',authentication)
 app.use('/auth', authentication)
 // to create Group
 app.use('/group', groupCreation)
+// to get name of groups
+app.use('/group' , groupCreation)
 
 app.listen(port, () => {
     console.log(`Backend server running at http://localhost:${port}`);
