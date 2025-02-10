@@ -28,8 +28,9 @@ export const VerificationCodeController = async (req, res) => {
             message: "Your code has been sent to your email. Please check it." });
     } catch (error) {
         // Send an error response back to the client
-     
-};   res.status(500).json({ 
+        res.status(500).json({ 
             success:false,
             message: "An error occurred while sending the verification code." });
+     
+};   
     }

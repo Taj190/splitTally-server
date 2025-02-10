@@ -11,7 +11,9 @@ import SendVerificationEmail from "../../utils/sendEmail.js";
 
 const SignUpGoogleController = async (req, res) => {
   const { name, email, password, googleId, isGoogleSignUp } = req.body;
- 
+  console.log("Received Headers:", req.headers);
+  
+
  const invite = await PendingInvite.findOne({ email });
   try {
   

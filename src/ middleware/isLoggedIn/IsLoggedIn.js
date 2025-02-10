@@ -6,13 +6,11 @@ export const IsLoggedIn = async (req, res, next) => {
     let user; 
     if(!token){
         const authHeader = req.headers['authorization'];
-
         if (!authHeader) return res.status(401).json({
             success: false,
             message: 'Unauthorized' });
-
             const Bearer_token = authHeader.split(' ')[1];
-
+           console.log( Bearer_token + 'token')
             if (!Bearer_token) return res.status(401).json({
                 success: false,
                 message: 'Unauthorized' });
@@ -20,10 +18,12 @@ export const IsLoggedIn = async (req, res, next) => {
                 try {
                     if (Bearer_token && Bearer_token.length > 100) { // Google access tokens start with "ya29."
                         user = await VerifyGoogleToken(Bearer_token); 
-                       
                         if (!user) return res.status(403).json({
                             success: false,
                             message: 'Invalid Google token' });
+                            req.user = user
+                            return next();
+                            
                     }
                 } catch (error) {
                     res.status(404).json({
@@ -50,3 +50,4 @@ export const IsLoggedIn = async (req, res, next) => {
             message: 'Invalid token' });
     }
 };
+

@@ -7,11 +7,14 @@ const CreateGroupController = async (req, res) => {
     try {
         const { groupName } = req.body;  
         let userId = req.user._id
+     
        if(req.user.email_verified){
         const Id = req.user.sub; 
+        console.log(Id ,  'here is the id which we are looking for')
         const existingUser = await User.findOne({ googleId:Id  })
         userId = existingUser._id
        }
+       
         const newGroup = new Group({
             name: groupName,  // Set the group name
             members: [userId]  // Add the logged-in user as the first member
@@ -40,7 +43,7 @@ const CreateGroupController = async (req, res) => {
 };
 
 const GetGroupNameController = async (req, res)=>{
-    let userId = req.user._id
+    let userId = req.user._id ;
     if(req.user.email_verified){
      const Id = req.user.sub; 
      const existingUser = await User.findOne({ googleId:Id  })

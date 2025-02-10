@@ -11,6 +11,7 @@ const oAuth2Client = new google.auth.OAuth2(
   "https://developers.google.com/oauthplayground"
 );
 
+
 oAuth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN });
 
 const SendVerificationEmail = async (email, code) => {
@@ -32,7 +33,7 @@ const SendVerificationEmail = async (email, code) => {
     });
 
     const mailOptions = {
-      from: process.env.EMAIL,
+      from: `"No-Reply" <${process.env.EMAIL}>`,
       to: email,
       subject: "Your Verification Code",
       text: `Your verification code is: ${code}`,
