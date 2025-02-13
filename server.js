@@ -41,6 +41,12 @@ app.use('/auth', authentication)
 app.use('/group', groupCreation)
 // to get name of groups
 app.use('/group' , groupCreation)
+//to get single group detail
+app.use('/group', groupCreation )
+// sending code to add group member
+app.use('/code', groupCreation)
+// to add new member in group
+app.use ('/send' , groupCreation)
 
 app.listen(port, () => {
     console.log(`Backend server running at http://localhost:${port}`);

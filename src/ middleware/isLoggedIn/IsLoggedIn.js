@@ -10,7 +10,7 @@ export const IsLoggedIn = async (req, res, next) => {
             success: false,
             message: 'Unauthorized' });
             const Bearer_token = authHeader.split(' ')[1];
-           console.log( Bearer_token + 'token')
+           console.log( Bearer_token + 'here is the token')
             if (!Bearer_token) return res.status(401).json({
                 success: false,
                 message: 'Unauthorized' });
