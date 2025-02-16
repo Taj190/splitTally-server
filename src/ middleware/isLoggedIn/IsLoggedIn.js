@@ -1,6 +1,7 @@
-import User from "../../schema/GooglesignUp.js";
+import User from "../../schema/SignupSchema/GooglesignUp.js";
 import { VerifyGoogleToken } from "../googleAuthTokenVerifcation/tokenVerfication.js";
 import jwt from 'jsonwebtoken';
+
 export const IsLoggedIn = async (req, res, next) => {
     const token = req.cookies.token; 
     let user; 
@@ -10,7 +11,6 @@ export const IsLoggedIn = async (req, res, next) => {
             success: false,
             message: 'Unauthorized' });
             const Bearer_token = authHeader.split(' ')[1];
-           console.log( Bearer_token + 'here is the token')
             if (!Bearer_token) return res.status(401).json({
                 success: false,
                 message: 'Unauthorized' });
@@ -22,16 +22,16 @@ export const IsLoggedIn = async (req, res, next) => {
                             success: false,
                             message: 'Invalid Google token' });
                             req.user = user
-                            return next();
-                            
+                            return next();  
                     }
-                } catch (error) {
+                } 
+                  catch (error) {
                     res.status(404).json({
                         success:false,
                         message:'user not found'
                     })
                 }
-    }
+           }
   
 
     try {
@@ -41,10 +41,8 @@ export const IsLoggedIn = async (req, res, next) => {
                  success: false,
                  message: 'User not found' });
                 req.user = user;
-        
               next();
     } catch (error) {
-        console.log(error , "here")
         return res.status(403).json({ 
             success:false,
             message: 'Invalid token' });

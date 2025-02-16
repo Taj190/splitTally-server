@@ -1,8 +1,6 @@
 import ConnectDb from "../../dbConfig/db.js";
-import VerificationCode from "../../schema/verificationcode.js";
+import VerificationCode from "../../schema/SignupSchema/verificationcode.js";
 import { GenerateCode } from "../../utils/generateCode.js";
-
-
 import SendVerificationEmail from "../../utils/sendEmail.js";
 
 ConnectDb();

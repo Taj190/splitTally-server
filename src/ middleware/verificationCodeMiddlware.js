@@ -1,5 +1,6 @@
-import User from "../schema/GooglesignUp.js";
-import VerificationCode from "../schema/verificationcode.js";
+
+import VerificationCode from "../schema/SignupSchema/verificationcode.js";
+import User from "../schema/SignupSchema/GooglesignUp.js";
 
 export const VerifyCodeMiddleware = async (req, res, next) => {
   const { email, code } = req.body; // Extract email and code from the request body

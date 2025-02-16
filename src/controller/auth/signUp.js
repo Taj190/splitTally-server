@@ -1,9 +1,10 @@
 import { DataValidation, PasswordValidation } from "../../ middleware/authHelper.js";
 import { VerifyCodeMiddleware } from "../../ middleware/verificationCodeMiddlware.js";
-import User from "../../schema/GooglesignUp.js";
+
 import Group from "../../schema/GroupSchema/Groupschema.js";
 import PendingInvite from "../../schema/PendingInvitation/PendingInvitation.js";
-import VerificationCode from "../../schema/verificationcode.js";
+import User from "../../schema/SignupSchema/GooglesignUp.js";
+import VerificationCode from "../../schema/SignupSchema/verificationcode.js";
 import { GenerateCode, generateToken}  from "../../utils/generateCode.js";
 import { comparePassword, hashPassword } from "../../utils/hashPassword.js";
 import SendVerificationEmail from "../../utils/sendEmail.js";
@@ -183,6 +184,14 @@ const LoginController = async (req, res) => {
     });
   }
 };
+//logout 
+const LogoutController = async(req, res)=>{
+    res.clearCookie('token' , { httpOnly: true, secure: true, sameSite: 'Lax',   path : '/' })
+    res.status(200).json({
+      success : true ,
+      message : 'Logging you out'
+    })
+}
 //forgot start
 const ForgotController = async (req, res )=>{
   const {email} = req.body ;
@@ -255,7 +264,8 @@ export{
   SignUpGoogleController,
   LoginController,
   ForgotController,
-  ResetPasswordController
+  ResetPasswordController,
+  LogoutController
 };
 
 

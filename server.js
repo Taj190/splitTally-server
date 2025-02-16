@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { authentication } from './src/route/googleSignUp.js';
 import axios from 'axios'
 import { groupCreation } from './src/route/GroupRoute/GroupRoute.js';
+import { TransAction } from './src/route/TransactionRoute/Addtransaction.js';
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -31,6 +32,8 @@ app.options('*', cors());
 app.use('/user', authentication);
 // for login
 app.use('/login', authentication)
+// to logout 
+app.use('/auth', authentication)
 //to get code
 app.use('/code',authentication)
 //forgot password to verify email
@@ -47,6 +50,10 @@ app.use('/group', groupCreation )
 app.use('/code', groupCreation)
 // to add new member in group
 app.use ('/send' , groupCreation)
+// to add transaction 
+app.use('/add', TransAction)
+// to verify transaction
+app.use('/verify', TransAction)
 
 app.listen(port, () => {
     console.log(`Backend server running at http://localhost:${port}`);

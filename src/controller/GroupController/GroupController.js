@@ -1,7 +1,7 @@
 import { config } from "../../dbConfig/paginationConfig.js";
-import User from "../../schema/GooglesignUp.js";
 import Group from "../../schema/GroupSchema/Groupschema.js";
 import PendingInvite from "../../schema/PendingInvitation/PendingInvitation.js";
+import User from "../../schema/SignupSchema/GooglesignUp.js";
 import { SendInvitationEmail } from "../../utils/sendEmail.js";
 
 
@@ -12,7 +12,6 @@ const CreateGroupController = async (req, res) => {
      
        if(req.user.email_verified){
         const Id = req.user.sub; 
-        console.log(Id ,  'here is the id which we are looking for')
         const existingUser = await User.findOne({ googleId:Id  })
         userId = existingUser._id
        }
@@ -86,7 +85,7 @@ res.status(200).json({
 const GroupNameController = async (req, res)=>{
    
     const {_id} = req.query
-    console.log(_id)
+    
        try {
           const group = await Group.findById({_id}).populate("members", "name email");
          
@@ -120,16 +119,6 @@ const AddMemberController = async (req, res)=>{
       // second step to consfim that user  is a part of Platform or not 
         const ExistingUser = await User.findOne({email});
        if(ExistingUser){
-        
-        // if user is part of platform then check he has joined the group for which he/she has been invited 
-        if (ExistingUser.groups.includes(groupId)) {
-            return res.status(400).json({ 
-                success:false,
-                message: "User is already a member of this group" });
-        }
-        //  if user is part of platform and not a part of group which has been requested then update both user and group schema 
-
-        else{
               //  $addToSet:  we have used it beacuse it prevent the duplicate entry in array automatically 
               // unlike push method  adding  blindly , it add new element if already not part of document.
              await User.updateOne(
@@ -146,7 +135,7 @@ const AddMemberController = async (req, res)=>{
                 success: true ,
                 message : 'new member has been added'
             })
-        }
+        
 
        } 
        else{
@@ -167,7 +156,7 @@ const AddMemberController = async (req, res)=>{
 
                 })
                 await invitation.save()
-                await SendInvitationEmail(email , name , code )
+                await SendInvitationEmail(email , code , name )
                 return res.status(200).json({
                     success: true ,
                     message : 'invitation has been sent to given email address'
