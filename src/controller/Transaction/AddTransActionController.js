@@ -6,32 +6,34 @@ import User from "../../schema/SignupSchema/GooglesignUp.js";
 
 
 export const AddTransactionController = async (req, res) => {
-    const { description, amount, groupId, transparencyMode } = req.body;
-    let initiator = req.query.initiator;
+    const { description, amount, groupId} = req.body;
+    let initiator  = req.user._id;
      
-    // if(req.user.email_verified){
-    //  const Id = req.user.sub; 
-    //  const existingUser = await User.findOne({ googleId:Id  })
-    //  initiator = existingUser._id
-    // }
+    if(req.user.email_verified){
+     const Id = req.user.sub; 
+     const existingUser = await User.findOne({ googleId:Id  })
+     initiator = existingUser._id
+    }
   
     try {
       // Find the group and members
       const group = await Group.findById(groupId).populate('members');
       if (!group) {
-        return res.status(404).json({ message: 'Group not found' });
+        return res.status(404).json({
+          success : false,
+          message: 'Group not found' });
       }
-  
+      let mode = group.privacyMode ;
       // Create the transaction data
       let transactionData = {
         description,
         amount,
         initiator,
         group: groupId,
-        transparencyMode
+        transparencyMode : mode
       };
   
-      if (transparencyMode) {
+      if (mode) {
         // Transparency mode: Need approval from other members
         const verifications = new Map();
   
@@ -58,15 +60,13 @@ export const AddTransactionController = async (req, res) => {
       await transaction.save();
 
       const pendingApprovals = [];
-      for (const [userId, status] of transaction.verifications) {
-        if (status === 'pending') {
-          const user = await User.findById(userId).select('name');
-          pendingApprovals.push(user); // Add user details to the pendingApprovals array
-        }
-      }
-      
-      
       if (transaction.transparencyMode) {
+        for (const [userId, status] of transaction.verifications) {
+          if (status === 'pending') {
+            const user = await User.findById(userId).select('name');
+            pendingApprovals.push(user); // Add user details to the pendingApprovals array
+          }
+        }
           // If transparency is ON, populate the initiator and verifications
           const populatedTransaction = await Transaction.findById(transaction._id)
               .populate('initiator', 'name') // Fetch initiator's name
@@ -76,6 +76,7 @@ export const AddTransactionController = async (req, res) => {
               populatedTransaction,
               pendingApprovals 
           });
+
       } else {
           // If transparency is OFF, return transaction without verifications
           res.json({

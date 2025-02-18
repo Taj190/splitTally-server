@@ -50,6 +50,8 @@ app.use('/group', groupCreation )
 app.use('/code', groupCreation)
 // to add new member in group
 app.use ('/send' , groupCreation)
+// to set privacy mode on or off
+app.use('/privacymode' , groupCreation)
 // to add transaction 
 app.use('/add', TransAction)
 // to verify transaction

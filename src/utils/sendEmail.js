@@ -32,19 +32,37 @@ const SendVerificationEmail = async (email, code) => {
       },
     });
 
+    // Email body with HTML for better design
     const mailOptions = {
       from: `"No-Reply" <${process.env.EMAIL}>`,
       to: email,
       subject: "Your Verification Code",
-      text: `Your verification code is: ${code}`,
+      html: `
+        <html>
+          <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f4; padding: 20px;">
+            <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+              <h1 style="color: #5a5a5a; font-size: 24px;">Verification Code</h1>
+              <p style="font-size: 16px; color: #555;">Hello,</p>
+              <p style="font-size: 16px; color: #555;">You requested a verification code to proceed. Please use the code below:</p>
+              <h2 style="font-size: 24px; color: #4CAF50; font-weight: bold;">${code}</h2>
+              <p style="font-size: 16px; color: #555;">Please note, this code will expire in 10 minutes.</p>
+              <p style="font-size: 16px; color: #555;">If you didn't request this code, you can ignore this message.</p>
+              <hr style="border: 1px solid #f1f1f1; margin: 20px 0;">
+              <p style="font-size: 14px; color: #888;">This is an automated message. Do not reply to this email.</p>
+            </div>
+          </body>
+        </html>
+      `,
     };
 
+    // Send the email
     await transporter.sendMail(mailOptions);
     console.log("Verification email sent successfully.");
   } catch (error) {
     console.error("Error sending verification email:", error);
   }
 };
+
 
  export const SendInvitationEmail = async (email, code, inviterName) => {
   try {

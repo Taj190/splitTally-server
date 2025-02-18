@@ -181,12 +181,65 @@ const AddMemberController = async (req, res)=>{
     }
 }
 
+const UpdatePrivacyModeController = async (req, res) => {
+    let userId = req.user._id;
+    const { groupId, privacyMode } = req.body;
+  
+    try {
+        // Check if user is logged in with Google or Email/Password
+        const user = req.user.email_verified
+            ? await User.findOne({ googleId: req.user.sub }) 
+            : await User.findById({ _id: userId });
+
+
+        // Ensure user exists and is part of the group
+        if (!user || !user.groups.includes(groupId)) {
+            return res.status(401).json({
+                success: false,
+                message: 'You are not authorized to toggle status for this group.'
+            });
+        }
+
+        // Check if the group exists (to prevent data inconsistency)
+        const group = await Group.findById(groupId);
+        if (!group) {
+            return res.status(404).json({
+                success: false,
+                message: 'Group not found.'
+            });
+        }
+
+        // Update the privacy mode
+        const updatedGroup = await Group.findByIdAndUpdate(
+            { _id: groupId },
+            { privacyMode },
+            { new: true }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: `Privacy mode has been switched ${privacyMode ? 'On' : 'Off'}.`,
+            group: updatedGroup
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: 'An error occurred while changing the privacy mode.'
+        });
+    }
+};
+
+
+
 
 export{
     CreateGroupController,
     GetGroupNameController,
     GroupNameController,
-    AddMemberController
+    AddMemberController,
+    UpdatePrivacyModeController 
 }
 
 

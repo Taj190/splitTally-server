@@ -9,6 +9,7 @@ export const VerifyCodeMiddleware = async (req, res, next) => {
   if (!email || !code) {
     return res.status(400).json({ message: 'Email and code are required.' });
   }
+  
 
   try {
      
