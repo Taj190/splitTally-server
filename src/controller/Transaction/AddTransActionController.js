@@ -1,10 +1,11 @@
+import { config } from "../../dbConfig/paginationConfig.js";
 import Transaction from "../../schema/AddTransactionSchema/TransactionSchema.js";
 import Group from "../../schema/GroupSchema/Groupschema.js";
 import User from "../../schema/SignupSchema/GooglesignUp.js";
 
 
 
-
+// to add new transaction
 export const AddTransactionController = async (req, res) => {
     const { description, amount, groupId} = req.body;
     let initiator  = req.user._id;
@@ -95,22 +96,23 @@ export const AddTransactionController = async (req, res) => {
   
   // Approve or cancel the verification for a transaction
   export const VerifyTransaction = async (req, res) => {
-    const { transactionId, status } = req.body; // status: "approved" or "cancelled"
-    let userId = req.query._id
-    // if(req.user.email_verified){
-    //  const Id = req.user.sub; 
-    //  const existingUser = await User.findOne({ googleId:Id  })
-    //  userId = existingUser._id
-    // }
-  
+    const { transactionId, status } = req.body;
+    let userId = req.user._id
+    if(req.user.email_verified){
+     const Id = req.user.sub; 
+     const existingUser = await User.findOne({ googleId:Id  })
+     userId = existingUser._id
+    }
+
     try {
-      const transaction = await Transaction.findById(transactionId);
+      const transaction = await Transaction.findById({_id : transactionId});
+     
       if (!transaction) {
         return res.status(404).json({ 
             success: false,
             message: 'Transaction not found' });
       }
-  
+ 
       // Check if the user is part of the group and should approve the transaction
       if (!transaction.verifications.has(userId.toString())) {
         return res.status(403).json({
@@ -142,4 +144,177 @@ export const AddTransactionController = async (req, res) => {
       res.status(500).json({ message: 'Server error' });
     }
   };
+
+  
+export const GetTransactionsController = async (req, res) => {
+  try {
+    const { groupId, page  } = req.query;
+    const limit = config.LIMIT;
+    const skip = (page - 1) * limit;
+
+    // Extract userId dynamically based on login method
+    const userId = req.user.email_verified
+      ? (await User.findOne({ googleId: req.user.sub }))._id
+      : req.user._id;
+
+    // Fetch transactions for the group with pagination
+    const transactions = await Transaction.find({ group: groupId })
+      .populate("initiator", "name") // Populate initiator's name
+      .skip(skip)
+      .limit(limit)
+      .lean(); // Convert to plain objects
+
+      const totaltransaction= await Transaction.countDocuments({  group: groupId });
+    // Process transactions to get pending approvals
+    const transactionsWithApprovals = await Promise.all(
+      transactions.map(async (transaction) => {
+        const pendingApprovals = [];
+
+        if (transaction.transparencyMode) {
+          for (const [verifierId, status] of Object.entries(transaction.verifications)) {
+            if (status === "pending") {
+              const user = await User.findById(verifierId).select("name");
+              if (user) pendingApprovals.push(user);
+            }
+          }
+        }
+
+        return {
+          ...transaction,
+          pendingApprovals,
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      transactions: transactionsWithApprovals,
+      currentPage: page,
+      totalPages: Math.ceil(totaltransaction / limit),
+      userId
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
+};
+// this for updating the existing transaction if needed
+export const EditTransActionController = async (req, res) => {
+  const { transactionId } = req.params;
+  const { updatedData } = req.body;
+  
+  // Extract userId based on Google auth or standard user
+  const userId = req.user.email_verified
+    ? (await User.findOne({ googleId: req.user.sub }))._id
+    : req.user._id;
+  
+  try {
+    // Find the transaction by ID
+    const transaction = await Transaction.findById({ _id: transactionId });
+    
+    // Check if the user is the initiator
+    if (transaction.initiator.toString() !== userId.toString()) {
+      return res.status(401).json({
+        success: false,
+        message: 'You are not authorized to edit this transaction. Good Bye!'
+      });
+    }
+
+    // Proceed with the update if the user is authorized
+    transaction.description = updatedData.description || transaction.description;
+    transaction.amount = updatedData.amount || transaction.amount;
+
+    await transaction.save(); // Save the updated transaction
+
+    return res.status(200).json({
+      success: true,
+      message: 'Transaction updated successfully!',
+      transaction
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error. Could not update the transaction.'
+    });
+  }
+};
+
+// this is for edit transaction .. to get that particular transaction detail
+ export const GetSingleTransactionDetailController = async (req, res)=>{
+  const { transactionId } = req.params;
+  console.log(transactionId , 'transactionId')
+  
+  // Extract userId based on Google auth or standard user
+  const userId = req.user.email_verified
+    ? (await User.findOne({ googleId: req.user.sub }))._id
+    : req.user._id;
+    console.log(userId , 'userId')
+    try {
+          // Find the transaction by ID
+    const transaction = await Transaction.findById({ _id: transactionId });
+    
+    // Check if the user is the initiator
+    if (transaction.initiator.toString() !== userId.toString()) {
+      return res.status(401).json({
+        success: false,
+        message: 'You are not authorized to edit this transaction. Good Bye!'
+      });
+    }
+    return res.status(200).json({
+      success : true ,
+      description : transaction.description,
+      amount : transaction.amount
+    })
+
+    } catch (error) {
+      res.status(500).json({
+        success : false ,
+        message : 'Something went Wrong'
+      })
+      
+    }
+ }
+
+ // this is for delete transaction
+ export const DeleteTransactionController = async (req, res) => {
+   const { transactionId } = req.params; // Get transactionId from request params
+   const userId = req.user.email_verified
+     ? (await User.findOne({ googleId: req.user.sub }))._id
+     : req.user._id;
+ 
+   try {
+     // Find the transaction by ID
+     const transaction = await Transaction.findById({_id: transactionId});
+ 
+     if (!transaction) {
+       return res.status(404).json({
+         success: false,
+         message: 'Transaction not found.',
+       });
+     }
+ 
+     // Check if the user is the one who created the transaction (initiator)
+    //  if (!transaction.initiator.equals(userId)) {
+    //    return res.status(401).json({
+    //      success: false,
+    //      message: 'You are not authorized to delete this transaction.',
+    //    });
+    //  }
+ 
+     // Delete the transaction
+     await Transaction.findByIdAndDelete({_id : transactionId});
+ 
+     return res.status(200).json({
+       success: true,
+       message: 'Transaction deleted successfully.',
+     });
+   } catch (error) {
+     console.error(error);
+     return res.status(500).json({
+       success: false,
+       message: 'An error occurred while deleting the transaction.',
+     });
+   }
+ };
+ 
   

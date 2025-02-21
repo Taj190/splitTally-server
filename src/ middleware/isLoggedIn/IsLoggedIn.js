@@ -3,7 +3,7 @@ import { VerifyGoogleToken } from "../googleAuthTokenVerifcation/tokenVerficatio
 import jwt from 'jsonwebtoken';
 
 export const IsLoggedIn = async (req, res, next) => {
-    const token = req.cookies.token; 
+    const token = req.cookies.token;
     let user; 
     if(!token){
         const authHeader = req.headers['authorization'];

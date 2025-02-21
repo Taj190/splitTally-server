@@ -59,7 +59,7 @@ const GetGroupNameController = async (req, res)=>{
     const groups = await Group.find({ members: userId })
     .skip(skip)
     .limit(limit)
-    .select('name');
+    .select('name ');
 
 // Get the total count for pagination
 const totalGroups = await Group.countDocuments({ members: userId });
@@ -85,7 +85,9 @@ res.status(200).json({
 const GroupNameController = async (req, res)=>{
    
     const {_id} = req.query
-    
+      const userId = req.user.email_verified
+      ? (await User.findOne({ googleId: req.user.sub }))._id
+      : req.user._id;
        try {
           const group = await Group.findById({_id}).populate("members", "name email");
          
@@ -94,7 +96,7 @@ const GroupNameController = async (req, res)=>{
             success:false,
             message: "Group not found" });
        }
-         res.json({ _id: group._id, name: group.name, members: group.members });
+         res.json({ _id: group._id, name: group.name, members: group.members ,  });
 
        } catch (error) {
         console.log (error)
@@ -201,7 +203,7 @@ const UpdatePrivacyModeController = async (req, res) => {
         }
 
         // Check if the group exists (to prevent data inconsistency)
-        const group = await Group.findById(groupId);
+        const group = await Group.findById({_id: groupId});
         if (!group) {
             return res.status(404).json({
                 success: false,
@@ -231,6 +233,31 @@ const UpdatePrivacyModeController = async (req, res) => {
     }
 };
 
+const PrivacyModeDetailController = async ( req , res )=>{
+  const { groupId} = req.query;
+    try {
+        const group = await Group.findById({_id: groupId});
+        if (!group) {
+            return res.status(404).json({
+                success: false,
+                message: 'Group not found.'
+            });
+        }
+        const privacyMode = group.privacyMode ;
+        res.status(200).json({
+            success : true ,
+            privacyMode
+        })
+    } catch (error) {
+      res.status(500).json({
+        success : true,
+        message : 'i think there is something went wrong'
+      })
+        
+    }
+
+}
+
 
 
 
@@ -239,7 +266,8 @@ export{
     GetGroupNameController,
     GroupNameController,
     AddMemberController,
-    UpdatePrivacyModeController 
+    UpdatePrivacyModeController ,
+    PrivacyModeDetailController 
 }
 
 

@@ -52,9 +52,20 @@ app.use('/code', groupCreation)
 app.use ('/send' , groupCreation)
 // to set privacy mode on or off
 app.use('/privacymode' , groupCreation)
+// to know privacymode is true or false 
+app.use('/mode', groupCreation)
 // to add transaction 
 app.use('/add', TransAction)
+// to get detail of all transactions
+app.use('/transactions', TransAction)
+// to edit transaction
+app.use('/edit', TransAction)
+// to get single transaction 
+app.use('/single', TransAction)
+// to delete transaction
+app.use('/delete', TransAction)
 // to verify transaction
+
 app.use('/verify', TransAction)
 
 app.listen(port, () => {
