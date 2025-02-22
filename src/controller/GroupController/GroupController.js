@@ -185,14 +185,13 @@ const AddMemberController = async (req, res)=>{
 
 const UpdatePrivacyModeController = async (req, res) => {
     let userId = req.user._id;
-    const { groupId, privacyMode } = req.body;
+    const { groupId } = req.body;
   
     try {
         // Check if user is logged in with Google or Email/Password
         const user = req.user.email_verified
             ? await User.findOne({ googleId: req.user.sub }) 
             : await User.findById({ _id: userId });
-
 
         // Ensure user exists and is part of the group
         if (!user || !user.groups.includes(groupId)) {
@@ -211,17 +210,41 @@ const UpdatePrivacyModeController = async (req, res) => {
             });
         }
 
-        // Update the privacy mode
-        const updatedGroup = await Group.findByIdAndUpdate(
-            { _id: groupId },
-            { privacyMode },
-            { new: true }
-        );
+        const now = new Date();
+
+        // Check if 30 days have passed since last toggle limit
+        if (group.toggleBlockedUntil && now >= group.toggleBlockedUntil) {
+            group.toggleCount = 0;
+            group.toggleBlockedUntil = null;
+        }
+
+        // Check if toggle limit is reached
+        if (group.toggleCount >= 3) {
+            return res.status(403).json({
+                success: false,
+                message: `Privacy Mode toggling is locked until ${group.toggleBlockedUntil.toDateString()}`,
+            });
+        }
+
+        // Toggle privacy mode
+        group.privacyMode = !group.privacyMode;
+        group.lastToggledBy = userId;
+        group.toggleCount += 1;
+        group.lastToggleTimestamp = now;
+
+        // If toggle count reaches 3, set block time for 30 days
+        if (group.toggleCount >= 3) {
+            const unlockDate = new Date();
+            unlockDate.setDate(unlockDate.getDate() + 30);
+            group.toggleBlockedUntil = unlockDate;
+        }
+
+        await group.save();
 
         return res.status(200).json({
             success: true,
-            message: `Privacy mode has been switched ${privacyMode ? 'On' : 'Off'}.`,
-            group: updatedGroup
+            message: `Privacy mode has been switched ${group.privacyMode ? 'On' : 'Off'}.`,
+            group
         });
 
     } catch (error) {
@@ -233,30 +256,38 @@ const UpdatePrivacyModeController = async (req, res) => {
     }
 };
 
-const PrivacyModeDetailController = async ( req , res )=>{
-  const { groupId} = req.query;
+const PrivacyModeDetailController = async (req, res) => {
+    const { groupId } = req.query;
     try {
-        const group = await Group.findById({_id: groupId});
+        const group = await Group.findById(groupId).populate('lastToggledBy', 'name');
         if (!group) {
             return res.status(404).json({
                 success: false,
                 message: 'Group not found.'
             });
         }
-        const privacyMode = group.privacyMode ;
-        res.status(200).json({
-            success : true ,
-            privacyMode
-        })
-    } catch (error) {
-      res.status(500).json({
-        success : true,
-        message : 'i think there is something went wrong'
-      })
-        
-    }
 
-}
+        const now = new Date();
+        let daysLeft = null;
+        if (group.toggleBlockedUntil && now < group.toggleBlockedUntil) {
+            daysLeft = Math.ceil((group.toggleBlockedUntil - now) / (1000 * 60 * 60 * 24));
+        }
+
+        res.status(200).json({
+            success: true,
+            privacyMode: group.privacyMode,
+            attemptsLeft: 3 - group.toggleCount,
+            lastUpdatedBy: group.lastToggledBy ? group.lastToggledBy.name : 'No recent updates',
+            daysUntilReset: daysLeft
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'I think there is something went wrong'
+        });
+    }
+};
+
 
 
 

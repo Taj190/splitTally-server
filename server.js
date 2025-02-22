@@ -65,8 +65,9 @@ app.use('/single', TransAction)
 // to delete transaction
 app.use('/delete', TransAction)
 // to verify transaction
-
 app.use('/verify', TransAction)
+// transaction detail of transaction status why in pending phase 
+app.use('/transaction', TransAction) 
 
 app.listen(port, () => {
     console.log(`Backend server running at http://localhost:${port}`);

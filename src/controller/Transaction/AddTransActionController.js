@@ -201,7 +201,6 @@ export const GetTransactionsController = async (req, res) => {
 export const EditTransActionController = async (req, res) => {
   const { transactionId } = req.params;
   const { updatedData } = req.body;
-  
   // Extract userId based on Google auth or standard user
   const userId = req.user.email_verified
     ? (await User.findOne({ googleId: req.user.sub }))._id
@@ -223,6 +222,17 @@ export const EditTransActionController = async (req, res) => {
     transaction.description = updatedData.description || transaction.description;
     transaction.amount = updatedData.amount || transaction.amount;
 
+    // this loop we are running when a initiator edit its transaction then again 
+    // //we set the status to pending so other can verify it 
+    const status = 'pending' ;
+    if (transaction.transparencyMode){
+      for (const [Id, status ] of transaction.verifications) {
+        if(Id.toString()!== userId.toString()){
+          transaction.verifications.set(Id.toString(), 'pending');
+        }
+      }
+    }
+    transaction.status = status;
     await transaction.save(); // Save the updated transaction
 
     return res.status(200).json({
@@ -242,13 +252,10 @@ export const EditTransActionController = async (req, res) => {
 // this is for edit transaction .. to get that particular transaction detail
  export const GetSingleTransactionDetailController = async (req, res)=>{
   const { transactionId } = req.params;
-  console.log(transactionId , 'transactionId')
-  
   // Extract userId based on Google auth or standard user
   const userId = req.user.email_verified
     ? (await User.findOne({ googleId: req.user.sub }))._id
     : req.user._id;
-    console.log(userId , 'userId')
     try {
           // Find the transaction by ID
     const transaction = await Transaction.findById({ _id: transactionId });
@@ -316,5 +323,67 @@ export const EditTransActionController = async (req, res) => {
      });
    }
  };
+
+ // Get transaction details securely
+export const GetTransactionDetailsController = async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    const userId = req.user.email_verified
+    ? (await User.findOne({ googleId: req.user.sub }))._id
+    : req.user._id;
+  console.log(transactionId)
+    // Fetch transaction and populate initiator & group
+    const transaction = await Transaction.findById(transactionId)
+      .populate("initiator", "name _id")
+      .populate("group", "name _id members");
+ console.log(transaction.group.members)
+    if (!transaction) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Transaction not found" });
+    }
+
+    // Ensure user is part of the group and authorized to view
+    if (!transaction.group.members.includes(userId)) {
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    // Map verification status
+    const approvedUserPromises = [];
+    const pendingUserPromises = [];
+    const cancelUserPromises =[]  ;
+    // Fetch the user details in parallel for approved and pending users
+    for (const [userId, status] of transaction.verifications.entries()) {
+      const userPromise = User.findById(userId).select("name _id");
+
+      if (status === "approved") {
+        approvedUserPromises.push(userPromise);
+      } else if (status === "pending") {
+        pendingUserPromises.push(userPromise);
+      }else if(status === 'canceled'){
+        cancelUserPromises.push(userPromise) ;
+      }
+    }
+
+    // Wait for all promises to resolve
+    const approvedUsers = await Promise.all(approvedUserPromises);
+    const pendingUsers = await Promise.all(pendingUserPromises);
+    const cancelUsers = await Promise.all(cancelUserPromises)
+    res.status(200).json({
+      success: true,
+      description: transaction.description,
+      amount: transaction.amount,
+      status: transaction.status,
+      initiator: transaction.initiator,
+      group: transaction.group,
+      approvedUsers,
+      pendingUsers,
+      cancelUsers 
+    });
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
  
   
