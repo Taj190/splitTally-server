@@ -331,12 +331,12 @@ export const GetTransactionDetailsController = async (req, res) => {
     const userId = req.user.email_verified
     ? (await User.findOne({ googleId: req.user.sub }))._id
     : req.user._id;
-  console.log(transactionId)
+  
     // Fetch transaction and populate initiator & group
     const transaction = await Transaction.findById(transactionId)
       .populate("initiator", "name _id")
       .populate("group", "name _id members");
- console.log(transaction.group.members)
+
     if (!transaction) {
       return res.status(404).json({ 
         success: false,
@@ -385,5 +385,65 @@ export const GetTransactionDetailsController = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// total of group expenses  detail
+export const GetTotalExpenseController = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    // Fetch all transactions for this group
+    const transactions = await Transaction.find({ group: groupId })
+    .populate('initiator', 'name _id')  
+    .populate('group', 'name')
+    .exec();
+
+    if (!transactions.length) {
+      return res.status(404).json({ success: false, message: "No transactions found for this group." });
+    }
+
+    const userContributions = {};
+    let totalApproved = 0;
+    let totalPending = 0;
+
+    transactions.forEach(transaction => {
+      const { initiator, status, amount } = transaction;
+      const userId = initiator._id.toString();
+
+      // Initialize user if not already initialized
+      if (!userContributions[userId]) {
+        userContributions[userId] = {
+          name: initiator.name,
+          approved: 0,
+          pending: 0,
+        };
+      }
+
+         // Separate the amounts by status
+         if (status === 'approved') {
+          userContributions[userId].approved += amount;
+          totalApproved += amount;
+        } else if (status === 'pending') {
+          userContributions[userId].pending += amount;
+          totalPending += amount;
+        }
+   
+
+    });
+
+    // Convert user contributions into an array
+    const contributionArray = Object.values(userContributions);
+
+    return res.status(200).json({
+      success: true,
+      contributionArray ,
+      totalApproved,
+      totalPending,
+    });
+
+  } catch (error) {
+    console.error("Error fetching transaction details:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
  
   
