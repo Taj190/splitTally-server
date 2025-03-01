@@ -347,10 +347,10 @@ export const GetTransactionDetailsController = async (req, res) => {
     if (!transaction.group.members.includes(userId)) {
       return res.status(403).json({ error: "Unauthorized access" });
     }
-
+  console.log(transaction.verifications)
     // Map verification status
     const approvedUserPromises = [];
-    const pendingUserPromises = [];
+    const pendingUserPromises = [];             
     const cancelUserPromises =[]  ;
     // Fetch the user details in parallel for approved and pending users
     for (const [userId, status] of transaction.verifications.entries()) {
@@ -390,6 +390,7 @@ export const GetTransactionDetailsController = async (req, res) => {
 export const GetTotalExpenseController = async (req, res) => {
   try {
     const { groupId } = req.params;
+    
     // Fetch all transactions for this group
     const transactions = await Transaction.find({ group: groupId })
     .populate('initiator', 'name _id')  
@@ -444,6 +445,94 @@ export const GetTotalExpenseController = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// settlement controller 
+export const GetSettlementAdjustmentController = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+  
+    // Fetch all approved transactions for the given group
+    const transactions = await Transaction.find({ group: groupId, status: "approved" });
+
+    if (!transactions.length) {
+      return res.status(404).json({ success: false, message: "No approved transactions found." });
+    }
+
+    // Calculate total approved amount
+    let totalApprovedAmount = 0;
+    const userExpenses = {};
+
+    for (const transaction of transactions) {
+      const { initiator, amount } = transaction;
+      totalApprovedAmount += amount;
+      userExpenses[initiator] = (userExpenses[initiator] || 0) + amount;
+    }
+
+    // Fetch all group members
+    const group = await Group.findById(groupId).populate("members", "name _id");
+    if (!group) {
+      return res.status(404).json({ success: false, message: "Group not found." });
+    }
+
+    const memberIds = group.members.map((m) => m._id.toString());
+    const splitAmount = totalApprovedAmount / memberIds.length;
+
+    const balances = memberIds.map((memberId) => ({
+      userId: memberId,
+      name: group.members.find((m) => m._id.toString() === memberId).name, // Attach name
+      balance: (userExpenses[memberId] || 0) - splitAmount,
+    }));
+
+    balances.sort((a, b) => a.balance - b.balance); // Sort: Debtors first, Creditors last
+
+    const settlements = [];
+    let i = 0, j = balances.length - 1;
+
+    while (i < j) {
+      let debtor = balances[i];
+      let creditor = balances[j];
+      let settlementAmount = Math.min(Math.abs(debtor.balance), creditor.balance);
+
+      if (settlementAmount > 0) {
+        settlements.push({
+          from: { id: debtor.userId, name: debtor.name },
+          to: { id: creditor.userId, name: creditor.name },
+          amount: parseFloat(settlementAmount.toFixed(2)), // Avoid floating point errors
+        });
+
+        debtor.balance += settlementAmount;
+        creditor.balance -= settlementAmount;
+      }
+
+      if (Math.abs(debtor.balance) < 1e-6) i++;
+      if (Math.abs(creditor.balance) < 1e-6) j--;
+    }
+
+    return res.status(200).json({
+      success: true,
+      totalApprovedAmount: parseFloat(totalApprovedAmount.toFixed(2)),
+      splitAmount: parseFloat(splitAmount.toFixed(2)),
+      settlements,
+    });
+  } catch (error) {
+    console.error("Error fetching settlement data:", error);
+  
+    if (error.response) {
+      console.error("Response error:", error.response);
+      console.error("Response status:", error.response.status);
+      console.error("Response data:", error.response.data);
+    }
+  
+    if (error.request) {
+      console.error("Request error:", error.request);
+    }
+  
+    console.error("Error message:", error.message);
+  }
+  
+};
+
+
 
  
   
