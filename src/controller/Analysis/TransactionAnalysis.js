@@ -177,7 +177,6 @@ export const GetReport = async (req, res) => {
 
         // Send back the AI report
         const content = group.analysis;
-        console.log(content)
         return res.status(200).json({ 
             success: true,
             content 

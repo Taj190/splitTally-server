@@ -12,7 +12,9 @@ const transactionSchema = new mongoose.Schema({
     of: String, // "pending" | "approved"
   },
   date: { type: Date, default: Date.now }
-});
+},
+{ timestamps: true }
+);
 
  const Transaction  = mongoose.model("Transaction", transactionSchema);
   export default  Transaction;

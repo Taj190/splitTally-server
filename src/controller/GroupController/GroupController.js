@@ -186,12 +186,16 @@ const AddMemberController = async (req, res)=>{
 const UpdatePrivacyModeController = async (req, res) => {
     let userId = req.user._id;
     const { groupId } = req.body;
+    if(req.user.email_verified){
+        const Id = req.user.sub; 
+        const existingUser = await User.findOne({ googleId:Id  })
+        userId = existingUser._id
+       }
   
     try {
         // Check if user is logged in with Google or Email/Password
-        const user = req.user.email_verified
-            ? await User.findOne({ googleId: req.user.sub }) 
-            : await User.findById({ _id: userId });
+        const user =  await User.findOne({_id : userId})
+           
 
         // Ensure user exists and is part of the group
         if (!user || !user.groups.includes(groupId)) {

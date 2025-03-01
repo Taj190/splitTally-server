@@ -159,6 +159,7 @@ export const GetTransactionsController = async (req, res) => {
 
     // Fetch transactions for the group with pagination
     const transactions = await Transaction.find({ group: groupId })
+      .sort({ updatedAt: -1 }) // to push latest transction on top,even if edited,  LIFO !
       .populate("initiator", "name") // Populate initiator's name
       .skip(skip)
       .limit(limit)
