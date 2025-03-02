@@ -1,6 +1,6 @@
 import express from 'express';
 import { IsLoggedIn } from '../../ middleware/isLoggedIn/IsLoggedIn.js';
-import { AddTransactionController, DeleteTransactionController, EditTransActionController, GetSettlementAdjustmentController, GetSingleTransactionDetailController, GetTotalExpenseController, GetTransactionDetailsController, GetTransactionsController,  VerifyTransaction } from '../../controller/Transaction/AddTransActionController.js';
+import { AddTransactionController, DeleteTransactionController, EditTransActionController, GetSettlementAdjustmentController, GetSingleTransactionDetailController, GetTotalExpenseController, GetTransactionDetailsController, GetTransactionsController,  ResetController,  ResetDetailController,  VerifyTransaction } from '../../controller/Transaction/AddTransActionController.js';
 import {  GenerateReport, GetAIReportStatus, GetReport } from '../../controller/Analysis/TransactionAnalysis.js';
 export const TransAction = express.Router();
 // to add transaction 
@@ -20,10 +20,14 @@ TransAction.get('/status/:transactionId' , IsLoggedIn , GetTransactionDetailsCon
 // to get total of transaction and contribution of  each person  route
 TransAction.get('/expense/:groupId' ,IsLoggedIn , GetTotalExpenseController )
 // to settle the account give suggestion
-TransAction.get('/settlement/:groupId' , GetSettlementAdjustmentController)
+TransAction.get('/settlement/:groupId' ,IsLoggedIn, GetSettlementAdjustmentController)
 // to analyize tranasaction
 TransAction.post('/analize' ,IsLoggedIn, GenerateReport )
 // to select which button or text must be shown in front end  according AIreportSTATUS this route is responsible for that
 TransAction.get('/eligibility/:groupId',IsLoggedIn, GetAIReportStatus)
 // to get report detail if available 
 TransAction.get('/explanation/:groupId', IsLoggedIn, GetReport)
+// to reset the account transactions 
+TransAction.post('/reset',IsLoggedIn, ResetController)
+// to get the detail of person who have performed the recent reset of tranaction
+TransAction.get('/reset-detail/:groupId' ,IsLoggedIn, ResetDetailController)

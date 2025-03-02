@@ -2,6 +2,7 @@ import { config } from "../../dbConfig/paginationConfig.js";
 import Transaction from "../../schema/AddTransactionSchema/TransactionSchema.js";
 import Group from "../../schema/GroupSchema/Groupschema.js";
 import User from "../../schema/SignupSchema/GooglesignUp.js";
+import { ApplyResetFilter } from "../../utils/resetUtils.js";
 
 
 
@@ -145,7 +146,7 @@ export const AddTransactionController = async (req, res) => {
     }
   };
 
-  
+  // fetching all the trasnaction of the group
 export const GetTransactionsController = async (req, res) => {
   try {
     const { groupId, page  } = req.query;
@@ -157,15 +158,19 @@ export const GetTransactionsController = async (req, res) => {
       ? (await User.findOne({ googleId: req.user.sub }))._id
       : req.user._id;
 
-    // Fetch transactions for the group with pagination
-    const transactions = await Transaction.find({ group: groupId })
+    // now this part decide which transaction will be displayed on the basis of reset occurance
+      const ExistingGroup = await Group.findById(groupId) ;
+      let filter = {group : groupId} ;
+      filter = ApplyResetFilter(ExistingGroup , filter)
+
+    const transactions = await Transaction.find(filter)
       .sort({ updatedAt: -1 }) // to push latest transction on top,even if edited,  LIFO !
       .populate("initiator", "name") // Populate initiator's name
       .skip(skip)
       .limit(limit)
       .lean(); // Convert to plain objects
 
-      const totaltransaction= await Transaction.countDocuments({  group: groupId });
+      const totaltransaction= await Transaction.countDocuments(filter);
     // Process transactions to get pending approvals
     const transactionsWithApprovals = await Promise.all(
       transactions.map(async (transaction) => {
@@ -250,7 +255,7 @@ export const EditTransActionController = async (req, res) => {
   }
 };
 
-// this is for edit transaction .. to get that particular transaction detail
+//  .. to get that particular transaction detail
  export const GetSingleTransactionDetailController = async (req, res)=>{
   const { transactionId } = req.params;
   // Extract userId based on Google auth or standard user
@@ -301,13 +306,13 @@ export const EditTransActionController = async (req, res) => {
        });
      }
  
-     // Check if the user is the one who created the transaction (initiator)
-    //  if (!transaction.initiator.equals(userId)) {
-    //    return res.status(401).json({
-    //      success: false,
-    //      message: 'You are not authorized to delete this transaction.',
-    //    });
-    //  }
+    //  Check if the user is the one who created
+     if (!transaction.initiator.equals(userId)) {
+       return res.status(401).json({
+         success: false,
+         message: 'You are not authorized to delete this transaction.',
+       });
+     }
  
      // Delete the transaction
      await Transaction.findByIdAndDelete({_id : transactionId});
@@ -348,7 +353,7 @@ export const GetTransactionDetailsController = async (req, res) => {
     if (!transaction.group.members.includes(userId)) {
       return res.status(403).json({ error: "Unauthorized access" });
     }
-  console.log(transaction.verifications)
+ 
     // Map verification status
     const approvedUserPromises = [];
     const pendingUserPromises = [];             
@@ -392,14 +397,18 @@ export const GetTotalExpenseController = async (req, res) => {
   try {
     const { groupId } = req.params;
     
+       // now this part decide which transaction will be displayed on the basis of reset occurance
+       const ExistingGroup = await Group.findById(groupId) ;
+       let filter = {group : groupId} ;
+       filter = ApplyResetFilter(ExistingGroup , filter)
     // Fetch all transactions for this group
-    const transactions = await Transaction.find({ group: groupId })
+    const transactions = await Transaction.find(filter)
     .populate('initiator', 'name _id')  
     .populate('group', 'name')
     .exec();
 
     if (!transactions.length) {
-      return res.status(404).json({ success: false, message: "No transactions found for this group." });
+      return res.status(404).json({ success: false, message: "so far no trabaction is available for this group." });
     }
 
     const userContributions = {};
@@ -452,9 +461,13 @@ export const GetSettlementAdjustmentController = async (req, res) => {
   try {
     const { groupId } = req.params;
   
+     // now this part decide which transaction will be displayed on the basis of reset occurance
+     const ExistingGroup = await Group.findById(groupId) ;
+     let filter = {group : groupId} ;
+     filter = ApplyResetFilter(ExistingGroup , filter)
     // Fetch all approved transactions for the given group
-    const transactions = await Transaction.find({ group: groupId, status: "approved" });
-
+    const transactions = await Transaction.find({ ...filter, status: "approved" });
+  
     if (!transactions.length) {
       return res.status(404).json({ success: false, message: "No approved transactions found." });
     }
@@ -532,6 +545,103 @@ export const GetSettlementAdjustmentController = async (req, res) => {
   }
   
 };
+// to reset the transaction of group 
+export const ResetController = async ( req , res)=>{
+  const { groupId}= req.body ;
+  const userId = req.user.email_verified
+  ? (await User.findOne({ googleId: req.user.sub }))._id
+  : req.user._id;
+  try {
+
+    const group = await Group.findById(groupId) ;
+    if(!group){
+      return res.status(404).json({
+        success : false,
+        message : ' group not found'
+      })
+    }
+    if(!group.members.includes(userId)){
+      return res.status(401).json({
+        success: false
+      })
+    }
+    const oneMonthAgo = new Date ;
+    oneMonthAgo.setDate(oneMonthAgo.getDate() - 30) ;
+
+    const recentRests = group.resetHistory.filter((reset)=>reset.resetAt > oneMonthAgo) ;
+
+    if(recentRests.length >= 4){
+     return res.status(401).json({
+      success: false ,
+      message : 'You have reached monthly reset limit'
+     })
+    }
+    const newReset ={
+      user : userId,
+      resetAt : new Date()
+    }
+    group.resetHistory.push(newReset);
+    await group.save();
+
+    res.status(201).json({
+      success: true ,
+      message : 'Account has be Reset successfully',
+     
+    
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      success : false,
+      message : ' something went wrong '
+    })
+    
+  }
+}
+
+// to kow who have reset the transaction..it will be get 
+
+export const ResetDetailController = async(req , res)=>{
+  const{ groupId} = req.params ;
+  const userId = req.user.email_verified
+  ? (await User.findOne({ googleId: req.user.sub }))._id
+  : req.user._id;
+  try {
+      const group = await Group.findById(groupId)
+      .populate("resetHistory.user" , "name")
+      .exec()
+      
+      if(!group ){
+        return res.status(404).json({
+          success: false 
+        })
+      }
+      if(!group.members.includes(userId)){
+        return res.status(401).json({
+          success: false
+        })
+      }
+     
+      let resetBy = null;
+     let length = 0;
+
+    if (group.resetHistory.length > 0) {
+     const latestUpdate = group.resetHistory[group.resetHistory.length - 1].user;
+    resetBy = latestUpdate.name;
+    length = group.resetHistory.length;
+}
+   
+      res.status(200).json({
+        success:true ,
+        resetBy,
+        length
+      })
+  } catch (error) {
+    res.status(500).json({
+      success: false
+    })
+  }
+}
 
 
 

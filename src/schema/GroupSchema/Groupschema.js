@@ -11,7 +11,18 @@ const groupSchema = new mongoose.Schema({
     reportGeneratedAt: { type: Date, default: null }, // Track when the report was generated
     nextReportAvailableAt: { type: Date, default: null } ,// Track when the next report can be requested
     analysis: { type: Object, default: null },
-}, { timestamps: true });
+    resetHistory: [
+        {
+          user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, 
+          resetAt: { type: Date, default: Date.now }  
+        }
+      ]
+      
+}, 
+
+{ timestamps: true }
+
+);
 
 groupSchema.index({ members: 1 });
 
