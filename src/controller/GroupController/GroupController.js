@@ -79,8 +79,6 @@ res.status(200).json({
  }
 
 }
-
-
 // this controller is responsible for fetching name of group along with groupId and membersList
 const GroupNameController = async (req, res)=>{
    
@@ -291,6 +289,39 @@ const PrivacyModeDetailController = async (req, res) => {
         });
     }
 };
+// if someone want to leave to group and also if group is left  with no member then delete the group as well 
+export const LeaveGroupController = async (req, res)=>{
+    let userId = req.user._id ;
+    if(req.user.email_verified){
+     const Id = req.user.sub; 
+     const existingUser = await User.findOne({ googleId:Id  })
+     userId = existingUser._id
+    }
+    const{groupId} = req.params ;
+    try {
+        const group = await Group.findByIdAndUpdate(groupId,
+            {$pull:{members:userId}},
+            {new : true}
+        )
+        if(group.members.length ===0){
+            await Group.findByIdAndDelete(groupId);
+            return res.status(201).json({
+                success : true ,
+                message : "Group deleted successfull as no member left"
+            })
+        }
+        res.status(201).json({
+            success : true ,
+            message : "you have left the Group"
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false ,
+            message :' something went worng'
+        })
+        
+    }
+}
 
 
 

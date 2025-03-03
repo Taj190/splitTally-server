@@ -630,11 +630,20 @@ export const ResetDetailController = async(req , res)=>{
     resetBy = latestUpdate.name;
     length = group.resetHistory.length;
 }
-   
+    let dateTime = new Date(group.updatedAt).toLocaleString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: true,
+}); 
       res.status(200).json({
         success:true ,
         resetBy,
-        length
+        length,
+        dateTime
       })
   } catch (error) {
     res.status(500).json({

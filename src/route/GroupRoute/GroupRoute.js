@@ -1,5 +1,5 @@
 import express from 'express';
-import {AddMemberController, CreateGroupController, GetGroupNameController, GroupNameController, PrivacyModeDetailController, UpdatePrivacyModeController }from '../../controller/GroupController/GroupController.js';
+import {AddMemberController, CreateGroupController, GetGroupNameController, GroupNameController, LeaveGroupController, PrivacyModeDetailController, UpdatePrivacyModeController }from '../../controller/GroupController/GroupController.js';
 import { IsLoggedIn } from '../../ middleware/isLoggedIn/IsLoggedIn.js';
 import { VerificationCodeController } from '../../controller/auth/verificationController.js'
 import { IsUserMemberOfGroup } from '../../ middleware/existingUserVerification.js';
@@ -19,3 +19,5 @@ groupCreation.post('/invitation' ,IsLoggedIn, VerifyCodeMiddleware, AddMemberCon
 groupCreation.put('/toggle' , IsLoggedIn, UpdatePrivacyModeController )
 // to get privacy mode is true or false 
 groupCreation.get('/status',IsLoggedIn,  PrivacyModeDetailController )
+// if someone leave the group
+groupCreation.delete('/leave/:groupId' , IsLoggedIn , LeaveGroupController)

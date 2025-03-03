@@ -52,6 +52,8 @@ app.use('/code', groupCreation)
 app.use ('/send' , groupCreation)
 // to set privacy mode on or off
 app.use('/privacymode' , groupCreation)
+// if someone leave the group
+app.use('/group', groupCreation)
 // to know privacymode is true or false 
 app.use('/mode', groupCreation)
 // to add transaction 
