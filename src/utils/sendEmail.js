@@ -8,7 +8,7 @@ dotenv.config();
 const oAuth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
   process.env.CLIENT_SECRET,
-  "https://developers.google.com/oauthplayground"
+  process.env.OAUTH_CALLBACK_URL 
 );
 
 
