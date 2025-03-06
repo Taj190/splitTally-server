@@ -18,12 +18,15 @@ ConnectDb();
 app.use(cookieParser());
 // Move CORS configuration before any other middleware or routes
 app.use(cors({
-    origin: 'https://split-tally.vercel.app/',
+    origin: process.env.NODE_ENV === 'production' 
+        ? 'https://split-tally.vercel.app'  // Use your Vercel frontend URL in production
+        : 'http://localhost:3000',  // Use localhost in development
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'credentials'], 
     exposedHeaders: ['Set-Cookie'] 
 }));
+
 
 
 app.options('*', cors());
