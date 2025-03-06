@@ -4,7 +4,6 @@ import ConnectDb from './src/dbConfig/db.js';
 import cors from 'cors'
 import cookieParser from 'cookie-parser';
 import { authentication } from './src/route/googleSignUp.js';
-import axios from 'axios'
 import { groupCreation } from './src/route/GroupRoute/GroupRoute.js';
 import { TransAction } from './src/route/TransactionRoute/Addtransaction.js';
 dotenv.config();
@@ -19,7 +18,7 @@ ConnectDb();
 app.use(cookieParser());
 // Move CORS configuration before any other middleware or routes
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'https://split-tally.vercel.app/',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'credentials'], 
