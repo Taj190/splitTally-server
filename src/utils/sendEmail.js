@@ -104,7 +104,7 @@ const SendVerificationEmail = async (email, code) => {
           <p>
             Click the link below to join:
             <br>
-            <a href="http://localhost:3000" style="display: inline-block; padding: 10px 15px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 10px;">
+            <a href="https://split-tally.vercel.app/" style="display: inline-block; padding: 10px 15px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 10px;">
               Join Now
             </a>
           </p>
