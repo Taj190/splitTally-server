@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 
 export const IsLoggedIn = async (req, res, next) => {
     const token = req.cookies.token;
-    console.log(token , 'here is the token')
     let user; 
     if(!token){
         const authHeader = req.headers['authorization'];

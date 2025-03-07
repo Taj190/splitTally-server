@@ -50,7 +50,7 @@ const GetGroupNameController = async (req, res)=>{
      const existingUser = await User.findOne({ googleId:Id  })
      userId = existingUser._id
     }
- console.log(userId)
+ 
  try {
     const page = parseInt(req.query.page) || 1;  
     const limit = config.LIMIT;  // Use imported limit

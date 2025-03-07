@@ -16,7 +16,7 @@ export const AddTransactionController = async (req, res) => {
      const existingUser = await User.findOne({ googleId:Id  })
      initiator = existingUser._id
     }
-  
+   console.log(initiator , 'who has done the trasnsaction')
     try {
       // Find the group and members
       const group = await Group.findById(groupId).populate('members');
