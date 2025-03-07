@@ -230,15 +230,17 @@ export const EditTransActionController = async (req, res) => {
 
     // this loop we are running when a initiator edit its transaction then again 
     // //we set the status to pending so other can verify it 
-    const status = 'pending' ;
+   
     if (transaction.transparencyMode){
+      const status = 'pending' ;
       for (const [Id, status ] of transaction.verifications) {
         if(Id.toString()!== userId.toString()){
           transaction.verifications.set(Id.toString(), 'pending');
         }
       }
+      transaction.status = status;
     }
-    transaction.status = status;
+   
     await transaction.save(); // Save the updated transaction
 
     return res.status(200).json({
