@@ -6,6 +6,7 @@ import { getGroupTransactions} from "../../utils/groupTransactions.js";
 export const GenerateReport = async (req, res) => {
     try {
         const { groupId } = req.body; 
+        console.log(groupId)
         const group = await Group.findById(groupId);
         if (!group) {
             return res.status(400).json({ error: "Group not found." });
